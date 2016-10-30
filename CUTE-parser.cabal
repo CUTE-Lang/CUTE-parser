@@ -10,7 +10,7 @@ maintainer:          jjc9310@gmail.com
 copyright:           Copyright, 2016 Junyoung Clare Jang
 category:            Web
 build-type:          Simple
--- extra-source-files:  
+extra-source-files:  src/Language/CUTE/Parser/Lexer.x
 cabal-version:       >=1.10
 
 library
