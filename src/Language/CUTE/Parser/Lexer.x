@@ -11,7 +11,7 @@
 --
 ------------------------------------------------------------
 
--- Developer Commetaries
+-- Developer Comments
 -- TODO:
 --
 --
@@ -34,7 +34,6 @@
 -- Module definition
 module Lexer
   (
-	main
   )
 where
 
@@ -43,10 +42,43 @@ import Control.Monad
 }
 
 ------------------------------------------------------------
--- Alex "Wrapper"
+-- -- Alex "Wrapper"
+
+-- %wrapper "basic"
 
 ------------------------------------------------------------
--- Alex "Macros definitions"
+-- Alex "Character set macro definitions"
+
+$lf           = [\n\r\f]
+$white        = [$lf\v\ ]
+$white_not_lf = $white # $lf
+$tab          = \t
+
+$ascdigit = 0-9
+$decdigit = $ascdigit
+$digit    = $ascdigit
+
+$bindigit  = 0-1
+$octdigit  = 0-7
+$hexdigit  = [$decdigit A-F a-f]
+
+-- Check specials to match it with CUTE syntax
+$special   = [\(\)\,\;\[\]\`\{\}]
+$ascsymbol = [\!\#\$\%\&\*\.\/\<\=\>\?\@\\\^\|\-\~\:]
+$symbol    = $ascsymbol # [$special \_\"\']
+
+$ascupper = [A-Z]
+$upper    = $ascupper
+
+$asclower = [a-z]
+$lower    = $asclower
+
+$graphic    = [$lower $upper $digit $special \"\']
+
+$idchar    = [$lower $upper $digit \']
+
+------------------------------------------------------------
+-- Alex "Regular expression macro definitions"
 
 ------------------------------------------------------------
 -- Alex "Identifier"
