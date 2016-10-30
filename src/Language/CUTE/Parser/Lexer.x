@@ -11,7 +11,7 @@
 --
 ------------------------------------------------------------
 
--- Developer Comments
+-- Developer Commetaries
 -- TODO:
 --
 --
@@ -23,11 +23,23 @@
 -- Alex "Haskell code fragment top"
 
 {
+-- Add warnings in code generation of Alex
+{-# OPTIONS_GHC -fno-warn-unused-matches #-}
+{-# OPTIONS_GHC -fno-warn-unused-binds #-}
+{-# OPTIONS_GHC -fno-warn-unused-imports #-}
+{-# OPTIONS_GHC -fno-warn-tabs #-}
+{-# OPTIONS_GHC -fno-warn-missing-signatures #-}
+{-# OPTIONS_GHC -funbox-strict-fields #-}
+
 -- Module definition
 module Lexer
   (
+	main
   )
 where
+
+-- Imported modules
+import Control.Monad
 }
 
 ------------------------------------------------------------
