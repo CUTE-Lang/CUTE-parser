@@ -1,0 +1,30 @@
+# Cabal files
+dist
+dist-*
+cabal-dev
+.cabal-sandbox/
+cabal.sandbox.config
+cabal.project.local
+
+# Stack files
+.stack-work/
+
+# Object / Interface files
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+
+# Other Settings & Log files
+.hpc
+.hsenv
+*.prof
+*.aux
+*.hp
+*.eventlog
+.HTF/
+
+# Emacs temp files
+*~
