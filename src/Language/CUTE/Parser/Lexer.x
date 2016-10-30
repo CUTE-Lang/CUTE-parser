@@ -38,7 +38,7 @@ module Lexer
 where
 
 -- Imported modules
-import Control.Monad
+import Language.CUTE.Parser.Token (Token(..))
 }
 
 ------------------------------------------------------------
