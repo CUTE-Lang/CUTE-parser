@@ -103,18 +103,18 @@ cute :-
 -- Alex "Rules"
 
 -- Ignore whitespaces
-  $white+                               ;
+  $white_not_lf+                        ;
 
 -- Integers
 <0> {
   @positive @decimal                    { tokenInteger positive decimal (0,0) }
   @negative @decimal                    { tokenInteger negative decimal (1,0) }
   @positive 0[bB] @binary               { tokenInteger positive binary (2,0) }
-  @negative 0[bB] @binary               { tokenInteger negative binary (2,0) }
+  @negative 0[bB] @binary               { tokenInteger negative binary (3,0) }
   @positive 0[oO] @octal                { tokenInteger positive octal (2,0) }
-  @negative 0[oO] @octal                { tokenInteger negative octal (2,0) }
-  @positive 0[oO] @hexadecimal          { tokenInteger positive hexadecimal (2,0) }
-  @negative 0[oO] @hexadecimal          { tokenInteger negative hexadecimal (2,0) }
+  @negative 0[oO] @octal                { tokenInteger negative octal (3,0) }
+  @positive 0[xX] @hexadecimal          { tokenInteger positive hexadecimal (2,0) }
+  @negative 0[xX] @hexadecimal          { tokenInteger negative hexadecimal (3,0) }
 }
 
 -- Special symbols
