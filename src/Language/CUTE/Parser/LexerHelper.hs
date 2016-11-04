@@ -96,14 +96,14 @@ data AlexInput
 
 
 alexGetByte :: AlexInput -> Maybe (Word8,AlexInput)
-alexGetByte (AlexInput sp pc bs cs) =
-  case (bs, cs) of
+alexGetByte (AlexInput sp pc bs str) =
+  case (bs, str) of
     ([], []) -> Nothing
-    ([], c:cs) ->
+    ([], c:str) ->
       case utf8Encode c of
-        b:bs -> Just (b, AlexInput sp' pc bs cs)
+        b:bs -> Just (b, AlexInput sp' pc bs str)
         [] -> Nothing
-    (b:bs, _) -> Just (b, AlexInput sp' pc bs cs)
+    (b:bs, _) -> Just (b, AlexInput sp' pc bs str)
   where sp' = increaseSrcPos sp
 
 
@@ -142,4 +142,4 @@ negative = negate
 positive = id
 
 tokenInteger :: Sign -> Radix -> Offset -> Action
-tokenInteger s r (so, eo) sp l str = (sp, CTinteger $ s $ read str)
+tokenInteger s r (so, eo) sp l str = (sp, CTinteger $ read str)
