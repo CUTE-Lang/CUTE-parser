@@ -102,6 +102,31 @@ cute :-
 ------------------------------------------------------------
 -- Alex "Rules"
 
+-- Ignore whitespaces
+  $white+                               ;
+
+-- Integers
+<0> {
+  @positive @decimal                    { tokenInteger positive decimal (0,0) }
+  @negative @decimal                    { tokenInteger negative decimal (1,0) }
+  @positive 0[bB] @binary               { tokenInteger positive binary (2,0) }
+  @negative 0[bB] @binary               { tokenInteger negative binary (2,0) }
+  @positive 0[oO] @octal                { tokenInteger positive octal (2,0) }
+  @negative 0[oO] @octal                { tokenInteger negative octal (2,0) }
+  @positive 0[oO] @hexadecimal          { tokenInteger positive hexadecimal (2,0) }
+  @negative 0[oO] @hexadecimal          { tokenInteger negative hexadecimal (2,0) }
+}
+
+-- Special symbols
+<0> {
+  "("                                   { token CTroundbo }
+  ")"                                   { token CTroundbc }
+  "{"                                   { token CTcurlybo }
+  "}"                                   { token CTcurlybc }
+  "["                                   { token CTsquarebo }
+  "]"                                   { token CTsquarebc }
+}
+
 ------------------------------------------------------------
 -- Alex "Haskell code fragment bottom"
 

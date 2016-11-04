@@ -117,3 +117,29 @@ alexInputPrevChar ai =
 -- Concrete Action type and helper functions
 
 type Action = SrcPos -> Length -> String -> (SrcPos, Token)
+
+type Length = Int
+
+type Offset = (Int, Int)
+
+
+token :: Token -> Action
+token t sp l str = (sp, t)
+
+
+type Radix = Int
+
+binary, octal, decimal, hexadecimal :: Radix
+binary = 2
+octal = 8
+decimal = 10
+hexadecimal = 16
+
+type Sign  = Integer -> Integer
+
+negative, positive :: Sign
+negative = negate
+positive = id
+
+tokenInteger :: Sign -> Radix -> Offset -> Action
+tokenInteger s r (so, eo) sp l str = (sp, CTinteger $ s $ read str)
