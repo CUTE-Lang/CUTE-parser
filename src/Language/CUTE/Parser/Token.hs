@@ -15,6 +15,13 @@ where
 -- Comments start at 41th character of that line.
 --
 
+data TokenCode
+  = Ascii
+  | Unicode
+
+-- Typeclass Deriving for Token Type
+  deriving (Show)
+
 data Token
 
 -- CUTE Keywords
@@ -26,7 +33,8 @@ data Token
 
 -- CUTE Reserved Symbols
   | CTequal                              -- "="
-  | CTlam                                -- "_\"
+  | CTlam TokenCode                      -- "_\" for ascii
+                                         -- "λ" for unicode
 
 -- CUTE Special Symbols
   | CTcomma                              -- ","
@@ -39,10 +47,16 @@ data Token
   | CTsquarebc                           -- "]"
   | CTunderscore                         -- "_"
 
--- CUTE Identifiers
+-- CUTE Identifying Strings
   | CTid String                          -- '\1'
+                                         -- Identifier for variables or contructors
+  | CTsym String                         -- '\1'
+                                         -- Symbols for variable operators or
+                                         -- constructor operators
 
 -- CUTE Basic Types
+  | CTbool Bool                          -- '\1'
+                                         -- True or False
   | CTchar Char                          -- '\1'
                                          -- Character which is surrounded by "'"
   | CTinteger Integer                    -- '\1'
@@ -54,7 +68,7 @@ data Token
   | CTcomment String                     -- "!!!"
 
 -- Other Tokens
-  | CTeof                                -- end of file
+  | CTeof                                -- End of file
   | CTunknown String                     -- '\1'
 
 -- Typeclass Deriving for Alex
