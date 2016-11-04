@@ -34,6 +34,7 @@
 -- Module definition
 module Language.CUTE.Parser.Lexer
   (
+    test
   )
 where
 
@@ -131,4 +132,19 @@ cute :-
 -- Alex "Haskell code fragment bottom"
 
 {
+test :: String -> [Token]
+test s = tokenize ai
+  where
+    tokenize :: AlexInput -> [Token]
+    tokenize ai =
+      case alexScan ai 0 of
+        AlexEOF -> []
+        AlexError ai' -> print ai' `seq` undefined
+        AlexSkip ai' l -> tokenize ai'
+        AlexToken ai' l action ->
+          let AlexInput sp pc bs cs = ai
+              (spt, token) = action sp l (take l cs)
+          in token : tokenize ai'
+    ai = AlexInput sp undefined [] s
+    sp = SrcPos "test" 0
 }

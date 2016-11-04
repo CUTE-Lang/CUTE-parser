@@ -18,7 +18,9 @@ library
   exposed-modules:     Language.CUTE.Parser
                      , Language.CUTE.Parser.Token
                      , Language.CUTE.Parser.LexerHelper
+                     , Language.CUTE.Parser.Lexer
   build-depends:       base >= 4.7 && < 5
+                     , array
   default-language:    Haskell2010
 
 test-suite CUTE-parser-test
