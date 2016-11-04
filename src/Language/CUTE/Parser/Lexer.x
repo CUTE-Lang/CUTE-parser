@@ -73,9 +73,9 @@ $upper    = $ascupper
 $asclower = [a-z]
 $lower    = $asclower
 
-$graphic    = [$lower $upper $digit $special \"\']
+$graphic    = [$lower $upper $decdigit $special \"\']
 
-$idchar    = [$lower $upper $digit \']
+$idchar    = [$lower $upper $decdigit \']
 
 ------------------------------------------------------------
 -- Alex "Regular expression macro definitions"
