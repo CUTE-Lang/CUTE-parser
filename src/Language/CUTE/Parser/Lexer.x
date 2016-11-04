@@ -65,7 +65,7 @@ $hexdigit  = [$decdigit A-F a-f]
 
 -- Check specials to match it with CUTE syntax
 $special   = [\(\)\,\;\[\]\`\{\}]
-$ascsymbol = [\!\#\$\%\&\*\.\/\<\=\>\?\@\\\^\|\-\~\:]
+$ascsymbol = [\!\#\$\%\&\*\+\.\/\<\=\>\?\@\\\^\|\-\~\:]
 $symbol    = $ascsymbol # [$special \_\"\']
 
 $ascupper = [A-Z]
@@ -121,6 +121,12 @@ cute :-
 -- Strings
 <0> {
   \" [$graphic \ ]* \"                  { tokenString }
+}
+
+-- Id and Symbols
+<0> {
+  @id                                   { tokenByString CTid }
+  @sym                                  { tokenByString CTsym }
 }
 
 -- Special symbols

@@ -19,6 +19,7 @@ module Language.CUTE.Parser.LexerHelper
     alexInputPrevChar,
     Action,
     token,
+    tokenByString,
     Radix,
     binary, octal, decimal, hexadecimal,
     Sign,
@@ -126,6 +127,9 @@ type Offset = (Int, Int)
 
 token :: Token -> Action
 token t sp l str = (sp, t)
+
+tokenByString :: (String -> Token) -> Action
+tokenByString tc sp l str = (sp, tc str)
 
 
 -- Helper functions for Integer
