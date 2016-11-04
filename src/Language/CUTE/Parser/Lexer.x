@@ -32,13 +32,14 @@
 {-# OPTIONS_GHC -funbox-strict-fields #-}
 
 -- Module definition
-module Lexer
+module Language.CUTE.Parser.Lexer
   (
   )
 where
 
 -- Imported modules
 import Language.CUTE.Parser.Token (Token(..))
+import Language.CUTE.Parser.LexerHelper
 }
 
 ------------------------------------------------------------
@@ -56,7 +57,6 @@ $tab          = \t
 
 $ascdigit = 0-9
 $decdigit = $ascdigit
-$digit    = $ascdigit
 
 $bindigit  = 0-1
 $octdigit  = 0-7
@@ -84,7 +84,6 @@ $idchar    = [$lower $upper $digit \']
 -- Alex "Identifier"
 
 cute :-
-
 
 ------------------------------------------------------------
 -- Alex "Rules"
