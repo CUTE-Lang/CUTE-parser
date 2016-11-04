@@ -23,7 +23,8 @@ module Language.CUTE.Parser.LexerHelper
     binary, octal, decimal, hexadecimal,
     Sign,
     negative, positive,
-    tokenInteger
+    tokenInteger,
+    tokenString,
   )
 where
 
@@ -127,6 +128,8 @@ token :: Token -> Action
 token t sp l str = (sp, t)
 
 
+-- Helper functions for Integer
+
 type Radix = Int
 
 binary, octal, decimal, hexadecimal :: Radix
@@ -143,3 +146,8 @@ positive = id
 
 tokenInteger :: Sign -> Radix -> Offset -> Action
 tokenInteger s r (so, eo) sp l str = (sp, CTinteger $ read str)
+
+-- Helper functions for String
+
+tokenString :: Action
+tokenString sp l str = (sp, CTstring $ read str)

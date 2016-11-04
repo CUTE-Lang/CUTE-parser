@@ -118,6 +118,11 @@ cute :-
   @negative 0[xX] @hexadecimal          { tokenInteger negative hexadecimal (3,0) }
 }
 
+-- Strings
+<0> {
+  \" [$graphic \ ]* \"                  { tokenString }
+}
+
 -- Special symbols
 <0> {
   "("                                   { token CTroundbo }
@@ -139,12 +144,12 @@ test s = tokenize ai
     tokenize ai =
       case alexScan ai 0 of
         AlexEOF -> []
-        AlexError ai' -> print ai' `seq` undefined
+        AlexError ai' -> error (show ai')
         AlexSkip ai' l -> tokenize ai'
         AlexToken ai' l action ->
           let AlexInput sp pc bs cs = ai
               (spt, token) = action sp l (take l cs)
           in token : tokenize ai'
-    ai = AlexInput sp undefined [] s
+    ai = AlexInput sp '$' [] s
     sp = SrcPos "test" 0
 }

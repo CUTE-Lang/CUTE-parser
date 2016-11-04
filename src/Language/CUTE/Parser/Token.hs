@@ -61,7 +61,7 @@ data Token
                                          -- Character which is surrounded by "'"
   | CTinteger Integer                    -- '\1'
                                          -- Integer with any base
-  | CTstring String                      -- '\1'
+  | CTstring String                      -- \"'\1'\"
                                          -- String which is surrounded by "\""
 
 -- CUTE Comments
