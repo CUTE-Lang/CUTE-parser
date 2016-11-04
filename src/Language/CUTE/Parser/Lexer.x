@@ -80,6 +80,20 @@ $idchar    = [$lower $upper $digit \']
 ------------------------------------------------------------
 -- Alex "Regular expression macro definitions"
 
+@id     = $idchar+
+@sym    = $symbol+
+
+@decimal     = $decdigit+
+@binary      = $bindigit+
+@octal       = $octdigit+
+@hexadecimal = $hexdigit+
+
+@exponent       = [eE] [\-\+]? @decimal
+@floating_point = @decimal? \. @decimal @exponent? | @decimal @exponent
+
+@negative = \-
+@positive = \+?
+
 ------------------------------------------------------------
 -- Alex "Identifier"
 
