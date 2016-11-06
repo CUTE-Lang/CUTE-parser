@@ -4,7 +4,7 @@ Parser for CUTE Language
 
 ![][Version]
 
-[Version]:https://img.shields.io/badge/version-0.1.0.0-red
+[Version]:https://img.shields.io/badge/version-0.1.0.0-red.svg
 
 ## Author
 

@@ -1,3 +1,15 @@
+-- |
+-- Module      : Language.CUTE.Parser.Token
+-- Description :
+-- Copyright   : (c) CUTE Lang, 2016-
+-- License     : see LICENSE
+-- Maintainer  : Junyoung Clare Jang <jjc9310@gmail.com>
+--             , Youngmin Cho <>
+--             , Na Yeon Park <>
+-- Portability : Windows, POSIX
+--
+-- Proposition types and typeclasses, and instances.
+--
 module Language.CUTE.Parser.Token
   (
     Token(..)
