@@ -19,6 +19,7 @@ branches:
   except:
     - /^devel-[0-9.]*$/
     - /^test-[0-9.]*$/
+    - gh-pages
 
 # Notification receivers
 notifications:
@@ -135,15 +136,14 @@ before_install:
 
 install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
-- if [ -f configure.ac ]; then autoreconf -i; fi
 - |
   set -ex
   case "$BUILD" in
     style)
-      stack install --no-terminal --install-ghc $ARGS alex happy hlint
+      stack --no-terminal --install-ghc $ARGS install alex happy hlint
       ;;
     stack)
-      stack install --no-terminal --install-ghc $ARGS alex happy
+      stack --no-terminal --install-ghc $ARGS install alex happy
       stack --no-terminal --install-ghc $ARGS test --bench --only-dependencies
       ;;
     cabal)
@@ -164,7 +164,7 @@ script:
   case "$BUILD" in
     style)
       hlint src/ test/ --cpp-simple --hint=HLint.hs
-      stack --no-terminal build
+      stack --no-terminal build --ghc-options -Wall
       ;;
     stack)
       stack --no-terminal $ARGS test --bench --no-run-benchmarks --haddock --no-haddock-deps
