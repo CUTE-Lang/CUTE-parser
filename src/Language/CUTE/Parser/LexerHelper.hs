@@ -31,12 +31,10 @@ where
 ------------------------------------------------------------
 -- Standard base imports
 
-import Numeric (readOct, readDec, readHex)
+import Numeric (readOct, readDec, readHex, readInt)
 import Data.Word (Word8)
 import Data.Char (ord)
 import qualified Data.Bits
-import Text.Read.Lex (readIntP)
-import Text.ParserCombinators.ReadP (ReadP, readP_to_S)
 
 ------------------------------------------------------------
 -- Other external imports
@@ -159,9 +157,7 @@ tokenInteger s r (so, eo) sp l str =
     extractInt :: [(Integer, String)] -> Integer
     extractInt (readResult:_) = fst readResult
     readBin :: ReadS Integer
-    readBin = readP_to_S readBinP
-    readBinP :: ReadP Integer
-    readBinP = readIntP 2 isBin valBin
+    readBin = readInt 2 isBin valBin
     isBin :: Char -> Bool
     isBin c
       | c `elem` "01" = True
