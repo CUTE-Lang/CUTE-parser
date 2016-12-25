@@ -16,6 +16,8 @@ cabal-version:       >=1.10
 library
   hs-source-dirs:      src
   exposed-modules:     Language.CUTE.Parser
+                     , Language.CUTE.Parser.ParseM
+                     , Language.CUTE.Parser.SrcPos
                      , Language.CUTE.Parser.Token
                      , Language.CUTE.Parser.LexerHelper
                      , Language.CUTE.Parser.Lexer
