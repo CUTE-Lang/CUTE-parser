@@ -8,8 +8,6 @@
 --             , Na Yeon Park <>
 -- Portability : Windows, POSIX
 --
--- Proposition types and typeclasses, and instances.
---
 module Language.CUTE.Parser.Token
   (
     Token(..)
@@ -77,7 +75,8 @@ data Token
                                          -- String which is surrounded by "\""
 
 -- CUTE Comments
-  | CTcomment String                     -- "!!!"
+  | CTcomment String                     -- "//" Single-line comments
+                                         -- "/*" Multi-line comments "*/"
 
 -- Other Tokens
   | CTeof                                -- End of file

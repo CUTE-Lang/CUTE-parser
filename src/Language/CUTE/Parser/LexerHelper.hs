@@ -8,8 +8,7 @@
 --             , Na Yeon Park <>
 -- Portability : Windows, POSIX
 --
--- Proposition types and typeclasses, and instances.
---
+{-# LANGUAGE BinaryLiterals #-}
 module Language.CUTE.Parser.LexerHelper
   (
     SrcPos(..),
@@ -25,16 +24,19 @@ module Language.CUTE.Parser.LexerHelper
     Sign,
     negative, positive,
     tokenInteger,
-    tokenString,
+    tokenString
   )
 where
 
 ------------------------------------------------------------
 -- Standard base imports
 
+import Numeric (readOct, readDec, readHex)
 import Data.Word (Word8)
 import Data.Char (ord)
 import qualified Data.Bits
+import Text.Read.Lex (readIntP)
+import Text.ParserCombinators.ReadP (ReadP, readP_to_S)
 
 ------------------------------------------------------------
 -- Other external imports
@@ -43,6 +45,8 @@ import qualified Data.Bits
 -- CUTE language internal imports
 
 import Language.CUTE.Parser.Token
+import Language.CUTE.Parser.SrcPos
+import Language.CUTE.Parser.ParseM
 
 ------------------------------------------------------------
 -- Byte type and helper function
@@ -70,24 +74,11 @@ utf8Encode = map fromIntegral . go . ord
                         , 0x80 + oc Data.Bits..&. 0x3f
                         ]
 
-------------------------------------------------------------
--- Src position type and helper function
-
-data SrcPos
-  = SrcPos
-    { spFilename :: !String,
-      spOffset :: !Int }
-    deriving (Eq,Ord,Show)
-
-
-increaseSrcPos :: SrcPos -> SrcPos
-increaseSrcPos sp =
-  case sp of
-    SrcPos f o -> SrcPos f (o + 1)
 
 ------------------------------------------------------------
 -- Alex wrapper
 
+-- TODO: Use ByteString
 data AlexInput
   = AlexInput
     { aiSrcPos :: !SrcPos,
@@ -118,6 +109,7 @@ alexInputPrevChar ai =
 ------------------------------------------------------------
 -- Concrete Action type and helper functions
 
+-- TODO: Use ParseM
 type Action = SrcPos -> Length -> String -> (SrcPos, Token)
 
 type Length = Int
@@ -134,13 +126,17 @@ tokenByString tc sp l str = (sp, tc str)
 
 -- Helper functions for Integer
 
-type Radix = Int
+data Radix
+  = Binary
+  | Octal
+  | Decimal
+  | Hexadecimal
 
 binary, octal, decimal, hexadecimal :: Radix
-binary = 2
-octal = 8
-decimal = 10
-hexadecimal = 16
+binary = Binary
+octal = Octal
+decimal = Decimal
+hexadecimal = Hexadecimal
 
 type Sign  = Integer -> Integer
 
@@ -149,7 +145,30 @@ negative = negate
 positive = id
 
 tokenInteger :: Sign -> Radix -> Offset -> Action
-tokenInteger s r (so, eo) sp l str = (sp, CTinteger $ read str)
+tokenInteger s r (so, eo) sp l str =
+  case r of
+    Binary ->
+      (sp, CTinteger . extractInt . readBin $ drop so str)
+    Octal ->
+      (sp, CTinteger . extractInt . readOct $ drop so str)
+    Decimal ->
+      (sp, CTinteger . extractInt . readDec $ drop so str)
+    Hexadecimal ->
+      (sp, CTinteger . extractInt . readHex $ drop so str)
+  where
+    extractInt :: [(Integer, String)] -> Integer
+    extractInt (readResult:_) = fst readResult
+    readBin :: ReadS Integer
+    readBin = readP_to_S readBinP
+    readBinP :: ReadP Integer
+    readBinP = readIntP 2 isBin valBin
+    isBin :: Char -> Bool
+    isBin c
+      | c `elem` "01" = True
+      | otherwise = False
+    valBin :: Char -> Int
+    valBin '1' = 1
+    valBin _ = 0
 
 -- Helper functions for String
 

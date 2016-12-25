@@ -75,13 +75,15 @@ $asclower = [a-z]
 $lower    = $asclower
 
 $graphic    = [$lower $upper $decdigit $special \"\']
+$printable  = [$graphic $white]
 
+$idstart   = [$lower $upper]
 $idchar    = [$lower $upper $decdigit \']
 
 ------------------------------------------------------------
 -- Alex "Regular expression macro definitions"
 
-@id     = $idchar+
+@id     = $idstart $idchar*
 @sym    = $symbol+
 
 @decimal     = $decdigit+
@@ -92,8 +94,10 @@ $idchar    = [$lower $upper $decdigit \']
 @exponent       = [eE] [\-\+]? @decimal
 @floating_point = @decimal? \. @decimal @exponent? | @decimal @exponent
 
-@negative = \-
-@positive = \+?
+@signed = [\-\+]
+
+@single_comment = "//"
+@multi_comment = "/*"
 
 ------------------------------------------------------------
 -- Alex "Identifier"
@@ -106,16 +110,20 @@ cute :-
 -- Ignore whitespaces
   $white_not_lf+                        ;
 
+-- Ignore comments
+  @single_comment .*                    ;
+
 -- Integers
 <0> {
-  @positive @decimal                    { tokenInteger positive decimal (0,0) }
-  @negative @decimal                    { tokenInteger negative decimal (1,0) }
-  @positive 0[bB] @binary               { tokenInteger positive binary (2,0) }
-  @negative 0[bB] @binary               { tokenInteger negative binary (3,0) }
-  @positive 0[oO] @octal                { tokenInteger positive octal (2,0) }
-  @negative 0[oO] @octal                { tokenInteger negative octal (3,0) }
-  @positive 0[xX] @hexadecimal          { tokenInteger positive hexadecimal (2,0) }
-  @negative 0[xX] @hexadecimal          { tokenInteger negative hexadecimal (3,0) }
+  @decimal                              { tokenInteger positive decimal (0,0) }
+  0[bB] @binary                         { tokenInteger positive binary (2,0) }
+  0[oO] @octal                          { tokenInteger positive octal (2,0) }
+  0[xX] @hexadecimal                    { tokenInteger positive hexadecimal (2,0) }
+
+  @signed @decimal                      { tokenInteger negative decimal (1,0) }
+  @signed 0[bB] @binary                 { tokenInteger negative binary (3,0) }
+  @signed 0[oO] @octal                  { tokenInteger negative octal (3,0) }
+  @signed 0[xX] @hexadecimal            { tokenInteger negative hexadecimal (3,0) }
 }
 
 -- Strings
@@ -143,6 +151,7 @@ cute :-
 -- Alex "Haskell code fragment bottom"
 
 {
+-- TODO: Use ByteString
 test :: String -> [Token]
 test s = tokenize ai
   where
