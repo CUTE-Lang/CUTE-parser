@@ -39,8 +39,11 @@ module Language.CUTE.Parser.Lexer
 where
 
 -- Imported modules
-import Language.CUTE.Parser.Token (Token(..))
+import Language.CUTE.Parser.Token (TokenCode(..), Token(..))
 import Language.CUTE.Parser.LexerHelper
+import Language.CUTE.Parser.SrcPos
+import Language.CUTE.Parser.ParseM
+import Language.CUTE.Parser.StringBuffer
 }
 
 ------------------------------------------------------------
@@ -94,7 +97,8 @@ $idchar    = [$lower $upper $decdigit \']
 @exponent       = [eE] [\-\+]? @decimal
 @floating_point = @decimal? \. @decimal @exponent? | @decimal @exponent
 
-@signed = [\-\+]
+@negative_signed = \-
+@positive_signed = \+
 
 @single_comment = "//"
 @multi_comment = "/*"
@@ -120,10 +124,15 @@ cute :-
   0[oO] @octal                          { tokenInteger positive octal (2,0) }
   0[xX] @hexadecimal                    { tokenInteger positive hexadecimal (2,0) }
 
-  @signed @decimal                      { tokenInteger negative decimal (1,0) }
-  @signed 0[bB] @binary                 { tokenInteger negative binary (3,0) }
-  @signed 0[oO] @octal                  { tokenInteger negative octal (3,0) }
-  @signed 0[xX] @hexadecimal            { tokenInteger negative hexadecimal (3,0) }
+  @positive_signed @decimal             { tokenInteger positive decimal (1,0) }
+  @positive_signed 0[bB] @binary        { tokenInteger positive binary (3,0) }
+  @positive_signed 0[oO] @octal         { tokenInteger positive octal (3,0) }
+  @positive_signed 0[xX] @hexadecimal   { tokenInteger positive hexadecimal (3,0) }
+
+  @negative_signed @decimal             { tokenInteger negative decimal (1,0) }
+  @negative_signed 0[bB] @binary        { tokenInteger negative binary (3,0) }
+  @negative_signed 0[oO] @octal         { tokenInteger negative octal (3,0) }
+  @negative_signed 0[xX] @hexadecimal   { tokenInteger negative hexadecimal (3,0) }
 }
 
 -- Strings
@@ -147,24 +156,35 @@ cute :-
   "]"                                   { token CTsquarebc }
 }
 
+-- Test
+<0> {
+  "Λ"                                   { token (CTlam Unicode) }
+}
+
 ------------------------------------------------------------
 -- Alex "Haskell code fragment bottom"
 
 {
--- TODO: Use ByteString
 test :: String -> [Token]
-test s = tokenize ai
+test str = tokenize ps
   where
-    tokenize :: AlexInput -> [Token]
-    tokenize ai =
-      case alexScan ai 0 of
+    tokenize :: ParseState -> [Token]
+    tokenize (ParseState sb0 pp0 cp0) =
+      case alexScan (AlexInput cp0 sb0) 0 of
         AlexEOF -> []
-        AlexError ai' -> error (show ai')
-        AlexSkip ai' l -> tokenize ai'
-        AlexToken ai' l action ->
-          let AlexInput sp pc bs cs = ai
-              (spt, token) = action sp l (take l cs)
-          in token : tokenize ai'
-    ai = AlexInput sp '$' [] s
+        AlexError ai1 -> error (show ai1)
+        AlexSkip (AlexInput cp1 sb1) l ->
+          tokenize (ParseState sb1 cp0 cp1)
+        AlexToken (AlexInput cp1 sb1) l action ->
+          let pm = action cp1 sb0 l
+          in
+            case runParseM pm (ParseState sb1 cp0 cp1) of
+              ParseOk ps2 (Posed _ token) ->
+                token : tokenize ps2
+              ParseErr esp eep emsg ->
+                error ("from " ++ show esp ++ " to " ++ show eep ++
+                       ": " ++ emsg)
+    ps = ParseState sb sp sp
+    sb = stringToStringBuffer str
     sp = SrcPos "test" 0
 }

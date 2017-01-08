@@ -8,10 +8,12 @@
 --             , Na Yeon Park <>
 -- Portability : Windows, POSIX
 --
-{-# LANGUAGE BinaryLiterals #-}
 module Language.CUTE.Parser.LexerHelper
   (
     SrcPos(..),
+    ParseM(..),
+    ParseState(..),
+    ParseResult(..),
     Byte,
     AlexInput(..),
     alexGetByte,
@@ -33,8 +35,6 @@ where
 
 import Numeric (readOct, readDec, readHex, readInt)
 import Data.Word (Word8)
-import Data.Char (ord)
-import qualified Data.Bits
 
 ------------------------------------------------------------
 -- Other external imports
@@ -45,70 +45,34 @@ import qualified Data.Bits
 import Language.CUTE.Parser.Token
 import Language.CUTE.Parser.SrcPos
 import Language.CUTE.Parser.ParseM
-
-------------------------------------------------------------
--- Byte type and helper function
-
-type Byte = Word8
-
-
-utf8Encode :: Char -> [Byte]
-utf8Encode = map fromIntegral . go . ord
- where
-  go oc
-   | oc <= 0x7f       = [oc]
-
-   | oc <= 0x7ff      = [ 0xc0 + (oc `Data.Bits.shiftR` 6)
-                        , 0x80 + oc Data.Bits..&. 0x3f
-                        ]
-
-   | oc <= 0xffff     = [ 0xe0 + (oc `Data.Bits.shiftR` 12)
-                        , 0x80 + ((oc `Data.Bits.shiftR` 6) Data.Bits..&. 0x3f)
-                        , 0x80 + oc Data.Bits..&. 0x3f
-                        ]
-   | otherwise        = [ 0xf0 + (oc `Data.Bits.shiftR` 18)
-                        , 0x80 + ((oc `Data.Bits.shiftR` 12) Data.Bits..&. 0x3f)
-                        , 0x80 + ((oc `Data.Bits.shiftR` 6) Data.Bits..&. 0x3f)
-                        , 0x80 + oc Data.Bits..&. 0x3f
-                        ]
-
+import Language.CUTE.Parser.StringBuffer
 
 ------------------------------------------------------------
 -- Alex wrapper
 
--- TODO: Use ByteString
 data AlexInput
   = AlexInput
     { aiSrcPos :: !SrcPos,
-      aiPrevChar :: Char,
-      aiRestByte :: [Byte],
-      aiRestInput :: String }
+      aiStringBuffer :: StringBuffer }
     deriving (Show)
 
 
-alexGetByte :: AlexInput -> Maybe (Word8,AlexInput)
-alexGetByte (AlexInput sp pc bs str) =
-  case (bs, str) of
-    ([], []) -> Nothing
-    ([], c:str) ->
-      case utf8Encode c of
-        b:bs -> Just (b, AlexInput sp' pc bs str)
-        [] -> Nothing
-    (b:bs, _) -> Just (b, AlexInput sp' pc bs str)
-  where sp' = increaseSrcPos sp
+alexGetByte :: AlexInput -> Maybe (Byte, AlexInput)
+alexGetByte (AlexInput sp0 sb0) =
+  do
+    (b, sb1) <- getByte sb0
+    return (b, AlexInput sp1 sb1)
+  where sp1 = increaseSrcPos sp0
 
 
 alexInputPrevChar :: AlexInput -> Char
-alexInputPrevChar ai =
-  case ai of
-    (AlexInput _ pc _ _) -> pc
+alexInputPrevChar (AlexInput _ sb) = getPrevChar sb
 
 
 ------------------------------------------------------------
 -- Concrete Action type and helper functions
 
--- TODO: Use ParseM
-type Action = SrcPos -> Length -> String -> (SrcPos, Token)
+type Action = SrcPos -> StringBuffer -> Length -> ParseM (Posed Token)
 
 type Length = Int
 
@@ -116,10 +80,12 @@ type Offset = (Int, Int)
 
 
 token :: Token -> Action
-token t sp l str = (sp, t)
+token t sp _ _ = return (Posed sp t)
 
 tokenByString :: (String -> Token) -> Action
-tokenByString tc sp l str = (sp, tc str)
+tokenByString tc sp sb l = return . Posed sp . tc $ str
+  where
+    str = getString l sb
 
 
 -- Helper functions for Integer
@@ -136,26 +102,29 @@ octal = Octal
 decimal = Decimal
 hexadecimal = Hexadecimal
 
-type Sign  = Integer -> Integer
+type Sign = Integer -> Integer
 
 negative, positive :: Sign
 negative = negate
 positive = id
 
 tokenInteger :: Sign -> Radix -> Offset -> Action
-tokenInteger s r (so, eo) sp l str =
-  case r of
-    Binary ->
-      (sp, CTinteger . extractInt . readBin $ drop so str)
-    Octal ->
-      (sp, CTinteger . extractInt . readOct $ drop so str)
-    Decimal ->
-      (sp, CTinteger . extractInt . readDec $ drop so str)
-    Hexadecimal ->
-      (sp, CTinteger . extractInt . readHex $ drop so str)
+tokenInteger s r (so, eo) sp sb l =
+  return (Posed sp . CTinteger . s . extractInt $ readRadix r)
   where
     extractInt :: [(Integer, String)] -> Integer
     extractInt (readResult:_) = fst readResult
+    readRadix :: Radix -> [(Integer, String)]
+    readRadix rad =
+      case rad of
+        Binary ->
+          readBin $ drop so str
+        Octal ->
+          readOct $ drop so str
+        Decimal ->
+          readDec $ drop so str
+        Hexadecimal ->
+          readHex $ drop so str
     readBin :: ReadS Integer
     readBin = readInt 2 isBin valBin
     isBin :: Char -> Bool
@@ -165,8 +134,21 @@ tokenInteger s r (so, eo) sp l str =
     valBin :: Char -> Int
     valBin '1' = 1
     valBin _ = 0
+    str = getString l sb
 
 -- Helper functions for String
 
 tokenString :: Action
-tokenString sp l str = (sp, CTstring $ read str)
+tokenString sp sb l = return . Posed sp . CTstring . read $ str
+  where
+    str = getString l sb
+
+-- Helper functions for Comments
+
+nestedComment :: Action
+nestedComment sp sb l = go 1
+  where
+    go :: Int -> ParseM (Posed Token)
+    go 0 = return (Posed sp $ CTstring "")
+    go n = go (n-1)
+

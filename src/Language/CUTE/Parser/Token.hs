@@ -10,7 +10,8 @@
 --
 module Language.CUTE.Parser.Token
   (
-    Token(..)
+    TokenCode(..),
+    Token(..),
   )
 where
 

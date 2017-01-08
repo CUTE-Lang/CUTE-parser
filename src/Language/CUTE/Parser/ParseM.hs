@@ -21,17 +21,24 @@ module Language.CUTE.Parser.ParseM
 where
 
 import Control.Monad
+import Control.Monad.Fail
 
 import Language.CUTE.Parser.SrcPos
+import Language.CUTE.Parser.StringBuffer
+
 
 data ParseState
   = ParseState
-    { prevLoc :: SrcPos,
-      currLoc :: SrcPos }
+    { stringBuffer :: StringBuffer,
+      prevPos :: SrcPos,
+      currPos :: SrcPos }
 
 data ParseResult s a
   = ParseOk s a
-  | ParseErr SrcPos SrcPos String
+  | ParseErr
+    { errStartPos :: SrcPos,
+      errEndPos :: SrcPos,
+      errMsg :: String }
 
 data ParseM a = ParseM { runParseM :: ParseState -> ParseResult ParseState a }
 
@@ -46,9 +53,12 @@ instance Monad ParseM where
   (>>=) = thenParseM
   fail = failParseM
 
+instance MonadFail ParseM where
+  fail = failParseM
+
 returnParseM :: a -> ParseM a
 returnParseM a =
-  ParseM $ \s -> ParseOk s a
+  a `seq` ParseM $ \s -> ParseOk s a
 
 thenParseM :: ParseM a -> (a -> ParseM b) -> ParseM b
 thenParseM p0 p1 =
@@ -61,7 +71,11 @@ thenParseM p0 p1 =
 
 failParseM :: String -> ParseM a
 failParseM msg =
-  ParseM $ \s -> ParseErr (prevLoc s) (currLoc s) msg
+  ParseM $ \s -> ParseErr (prevPos s) (currPos s) msg
+
+failPosParseM :: SrcPos -> SrcPos -> String -> ParseM a
+failPosParseM loc0 loc1 msg =
+  ParseM $ \s -> ParseErr loc0 loc1 msg
 
 getParseState :: ParseM ParseState
 getParseState = ParseM $ \s -> ParseOk s s
