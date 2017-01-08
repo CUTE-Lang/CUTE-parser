@@ -9,58 +9,70 @@ module Language.CUTE.Parser.StringBuffer
   )
 where
 
-import qualified Data.Bits as Bits
+import Data.Bits (shiftR, (.&.))
 import Data.Char (ord)
 import Data.Word (Word8)
 
+import Codec.Binary.UTF8.String as UTF8
+import Data.ByteString as BS
+import Data.ByteString.UTF8 as BSU
 
 type Byte = Word8
 
-data StringBuffer
-  = StringBuffer
-    { prevChar :: Char,
-      restBytes :: [Byte],
-      restString :: String }
-  deriving (Show)
-
-stringToStringBuffer :: String -> StringBuffer
-stringToStringBuffer str = StringBuffer '$' [] str
-
-utf8Encode :: Char -> [Byte]
-utf8Encode = map fromIntegral . go . ord
- where
-  go oc
-   | oc <= 0x7f       = [oc]
-
-   | oc <= 0x7ff      = [ 0xc0 + (oc `Bits.shiftR` 6),
-                          0x80 + oc Bits..&. 0x3f ]
-
-   | oc <= 0xffff     = [ 0xe0 + (oc `Bits.shiftR` 12),
-                          0x80 + ((oc `Bits.shiftR` 6) Bits..&. 0x3f),
-                          0x80 + oc Bits..&. 0x3f ]
-
-   | otherwise        = [ 0xf0 + (oc `Bits.shiftR` 18),
-                          0x80 + ((oc `Bits.shiftR` 12) Bits..&. 0x3f),
-                          0x80 + ((oc `Bits.shiftR` 6) Bits..&. 0x3f),
-                          0x80 + oc Bits..&. 0x3f ]
-
-getByte :: StringBuffer -> Maybe (Byte, StringBuffer)
-getByte sb =
-  case (restBytes sb, restString sb) of
-    ([], []) -> Nothing
-    ([], c:str) ->
-      case utf8Encode c of
-        b:bs -> Just (b, sb { restBytes = bs,
-                              restString = str })
-        [] -> Nothing
-    (b:bs, _) -> Just (b, sb { restBytes = bs })
-
-getPrevChar :: StringBuffer -> Char
-getPrevChar = prevChar
-{-# INLINE getPrevChar #-}
-
 type Length = Int
 
+data StringBuffer
+  = StringBuffer
+    { buffer :: !BS.ByteString,
+      bufferLength :: !Length,
+      bufferPosition :: !Length }
+
+stringToStringBuffer :: String -> StringBuffer
+stringToStringBuffer str = StringBuffer bs (BS.length bs) 0
+  where
+    bs = BSU.fromString str
+{-# INLINE stringToStringBuffer #-}
+
+instance Show StringBuffer where
+  showsPrec _ sb = showString "<StringBuffer: ("
+                   . shows (bufferLength sb)
+                   . showString ","
+                   . shows (bufferPosition sb)
+                   . showString ")="
+                   . shows (showByte sb)
+                   . showString " >"
+
+showByte :: StringBuffer -> Maybe Byte
+showByte sb =
+  if (bufferPosition sb < bufferLength sb)
+  then Just $ BS.index (buffer sb) (bufferPosition sb)
+  else Nothing
+{-# INLINE showByte #-}
+
+skipBuffer :: Length -> StringBuffer -> StringBuffer
+skipBuffer n sb@(StringBuffer _ _ bp) = sb {bufferPosition = bp + n}
+{-# INLINE skipBuffer #-}
+
+getByte :: StringBuffer -> Maybe (Byte, StringBuffer)
+getByte sb0 =
+  do
+    b <- showByte sb0
+    let sb1 = skipBuffer 1 sb0
+    return (b, sb1)
+{-# INLINE getByte #-}
+
+getPrevChar :: StringBuffer -> Maybe Char
+getPrevChar sb = Just 'c'
+{-# INLINE getPrevChar #-}
+
 getString :: Length -> StringBuffer -> String
-getString l = take l . restString
+getString l sb = toString . BSU.take l
+                 . BS.drop (bufferPosition sb) $ buffer sb
 {-# INLINE getString #-}
+
+getChar :: StringBuffer -> Maybe Char
+getChar sb =
+  do
+    (c,_) <- BSU.decode $ buffer sb
+    return c
+{-# INLINE getChar #-}

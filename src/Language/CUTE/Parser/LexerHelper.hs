@@ -39,6 +39,8 @@ import Data.Word (Word8)
 ------------------------------------------------------------
 -- Other external imports
 
+import qualified Data.ByteString.UTF8 as BSU
+
 ------------------------------------------------------------
 -- CUTE language internal imports
 
@@ -66,8 +68,10 @@ alexGetByte (AlexInput sp0 sb0) =
 
 
 alexInputPrevChar :: AlexInput -> Char
-alexInputPrevChar (AlexInput _ sb) = getPrevChar sb
-
+alexInputPrevChar (AlexInput _ sb) =
+  case getPrevChar sb of
+    Just c -> c
+    Nothing -> BSU.replacement_char
 
 ------------------------------------------------------------
 -- Concrete Action type and helper functions
