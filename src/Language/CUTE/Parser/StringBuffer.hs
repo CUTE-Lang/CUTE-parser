@@ -3,9 +3,12 @@ module Language.CUTE.Parser.StringBuffer
     Byte,
     StringBuffer,
     stringToStringBuffer,
-    getByte,
-    getPrevChar,
-    getString,
+    skipBuffer,
+    getBufferByte,
+    getBufferString,
+    getBufferChar,
+    getBufferLength,
+    getBufferPosition,
   )
 where
 
@@ -53,26 +56,32 @@ skipBuffer :: Length -> StringBuffer -> StringBuffer
 skipBuffer n sb@(StringBuffer _ _ bp) = sb {bufferPosition = bp + n}
 {-# INLINE skipBuffer #-}
 
-getByte :: StringBuffer -> Maybe (Byte, StringBuffer)
-getByte sb0 =
+getBufferByte :: StringBuffer -> Maybe (Byte, StringBuffer)
+getBufferByte sb0 =
   do
     b <- showByte sb0
     let sb1 = skipBuffer 1 sb0
     return (b, sb1)
-{-# INLINE getByte #-}
+{-# INLINE getBufferByte #-}
 
-getPrevChar :: StringBuffer -> Maybe Char
-getPrevChar sb = Just 'c'
-{-# INLINE getPrevChar #-}
-
-getString :: Length -> StringBuffer -> String
-getString l sb = toString . BSU.take l
+getBufferString :: Length -> StringBuffer -> String
+getBufferString l sb = toString . BSU.take l
                  . BS.drop (bufferPosition sb) $ buffer sb
-{-# INLINE getString #-}
+{-# INLINE getBufferString #-}
 
-getChar :: StringBuffer -> Maybe Char
-getChar sb =
+getBufferChar :: StringBuffer -> Maybe (Char, StringBuffer)
+getBufferChar sb0 =
   do
-    (c,_) <- BSU.decode $ buffer sb
-    return c
-{-# INLINE getChar #-}
+    (c,l) <- BSU.decode
+             . BS.drop (bufferPosition sb0) $ buffer sb0
+    let sb1 = skipBuffer l sb0
+    return (c, sb1)
+{-# INLINE getBufferChar #-}
+
+getBufferLength :: StringBuffer -> Length
+getBufferLength = bufferLength
+{-# INLINE getBufferLength #-}
+
+getBufferPosition :: StringBuffer -> Length
+getBufferPosition = bufferPosition
+{-# INLINE getBufferPosition #-}

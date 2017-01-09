@@ -25,10 +25,10 @@ data SrcPos
       spOffset :: !Int }
     deriving (Eq,Show)
 
-increaseSrcPos :: SrcPos -> SrcPos
-increaseSrcPos sp =
+increaseSrcPos :: Int -> SrcPos -> SrcPos
+increaseSrcPos n sp =
   case sp of
-    SrcPos f o -> SrcPos f (o + 1)
+    SrcPos f o -> SrcPos f (o + n)
 
 data Posed a
   = Posed SrcPos a

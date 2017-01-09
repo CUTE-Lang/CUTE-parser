@@ -19,6 +19,7 @@ module Language.CUTE.Parser.LexerHelper
     alexGetByte,
     alexInputPrevChar,
     Action,
+    lexError,
     token,
     tokenByString,
     Radix,
@@ -26,7 +27,8 @@ module Language.CUTE.Parser.LexerHelper
     Sign,
     negative, positive,
     tokenInteger,
-    tokenString
+    tokenString,
+    nestedComment
   )
 where
 
@@ -54,24 +56,47 @@ import Language.CUTE.Parser.StringBuffer
 
 data AlexInput
   = AlexInput
-    { aiSrcPos :: !SrcPos,
-      aiStringBuffer :: StringBuffer }
+    { alexCurrPos :: !SrcPos,
+      alexStringBuffer :: StringBuffer }
     deriving (Show)
 
+
+alexGetChar :: AlexInput -> Maybe (Char, AlexInput)
+alexGetChar (AlexInput sp0 sb0) =
+  do
+    (c, sb1) <- getBufferChar sb0
+    let l = getBufferPosition sb1 - getBufferPosition sb0
+        sp1 = increaseSrcPos l sp0
+    return (c, AlexInput sp1 sb1)
 
 alexGetByte :: AlexInput -> Maybe (Byte, AlexInput)
 alexGetByte (AlexInput sp0 sb0) =
   do
-    (b, sb1) <- getByte sb0
+    (b, sb1) <- getBufferByte sb0
     return (b, AlexInput sp1 sb1)
-  where sp1 = increaseSrcPos sp0
+  where sp1 = increaseSrcPos 1 sp0
 
-
+-- Define this when use left ctx of Alex
 alexInputPrevChar :: AlexInput -> Char
-alexInputPrevChar (AlexInput _ sb) =
-  case getPrevChar sb of
-    Just c -> c
-    Nothing -> BSU.replacement_char
+alexInputPrevChar ai = undefined
+
+getAlexInput :: ParseM AlexInput
+getAlexInput =
+  do
+    ps <- getParseState
+    let sb = stringBuffer ps
+        cp = currPos ps
+        ai = AlexInput cp sb
+    return ai
+
+putAlexInput :: AlexInput -> ParseM ()
+putAlexInput ai =
+  do
+    ps0 <- getParseState
+    let sb = alexStringBuffer ai
+        cp = alexCurrPos ai
+        ps1 = ps0 { stringBuffer = sb, currPos = cp }
+    putParseState ps1
 
 ------------------------------------------------------------
 -- Concrete Action type and helper functions
@@ -82,6 +107,8 @@ type Length = Int
 
 type Offset = (Int, Int)
 
+lexError :: String -> Action
+lexError msg _ _ _ = failParseM msg
 
 token :: Token -> Action
 token t sp _ _ = return (Posed sp t)
@@ -89,7 +116,7 @@ token t sp _ _ = return (Posed sp t)
 tokenByString :: (String -> Token) -> Action
 tokenByString tc sp sb l = return . Posed sp . tc $ str
   where
-    str = getString l sb
+    str = getBufferString l sb
 
 
 -- Helper functions for Integer
@@ -138,21 +165,53 @@ tokenInteger s r (so, eo) sp sb l =
     valBin :: Char -> Int
     valBin '1' = 1
     valBin _ = 0
-    str = getString l sb
+    str = getBufferString l sb
 
 -- Helper functions for String
 
 tokenString :: Action
 tokenString sp sb l = return . Posed sp . CTstring . read $ str
   where
-    str = getString l sb
+    str = getBufferString l sb
 
 -- Helper functions for Comments
 
 nestedComment :: Action
-nestedComment sp sb l = go 1
+nestedComment sp _ _ =
+  do
+    alexI0 <- getAlexInput
+    go 1 "" alexI0
   where
-    go :: Int -> ParseM (Posed Token)
-    go 0 = return (Posed sp $ CTstring "")
-    go n = go (n-1)
-
+    errMsg :: String
+    errMsg = "EOF while parsing comment"
+    go :: Int -> String -> AlexInput -> ParseM (Posed Token)
+    go 0 str0 alexI0 =
+      return (Posed sp . CTcomment . reverse . drop 2 $ str0)
+    go n str0 alexI0 =
+      do
+        (c0, alexI1) <- liftMaybe errMsg $ alexGetChar alexI0
+        putAlexInput alexI1
+        let str1 = c0:str0
+        case c0 of
+          '/' ->
+            do
+              (c1, alexI2) <- liftMaybe errMsg $ alexGetChar alexI1
+              putAlexInput alexI2
+              let str2 = c1:str1
+              case c1 of
+                '*' ->
+                  go (n+1) str2 alexI2
+                _ ->
+                  go n str2 alexI2
+          '*' ->
+            do
+              (c1, alexI2) <- liftMaybe errMsg $ alexGetChar alexI1
+              putAlexInput alexI2
+              let str2 = c1:str1
+              case c1 of
+                '/' ->
+                  go (n-1) str2 alexI2
+                _ ->
+                  go n str2 alexI2
+          _ ->
+            go n str1 alexI1

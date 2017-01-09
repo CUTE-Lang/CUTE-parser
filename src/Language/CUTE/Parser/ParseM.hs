@@ -17,6 +17,8 @@ module Language.CUTE.Parser.ParseM
     thenParseM,
     failParseM,
     getParseState,
+    putParseState,
+    liftMaybe,
   )
 where
 
@@ -40,7 +42,9 @@ data ParseResult s a
       errEndPos :: SrcPos,
       errMsg :: String }
 
-data ParseM a = ParseM { runParseM :: ParseState -> ParseResult ParseState a }
+data ParseM a
+  = ParseM
+    { runParseM :: ParseState -> ParseResult ParseState a }
 
 instance Functor ParseM where
   fmap = liftM
@@ -79,3 +83,10 @@ failPosParseM loc0 loc1 msg =
 
 getParseState :: ParseM ParseState
 getParseState = ParseM $ \s -> ParseOk s s
+
+putParseState :: ParseState -> ParseM ()
+putParseState s1 = ParseM $ \s0 -> ParseOk s1 ()
+
+liftMaybe :: String -> Maybe a -> ParseM a
+liftMaybe _ (Just a) = returnParseM a
+liftMaybe msg Nothing = failParseM msg

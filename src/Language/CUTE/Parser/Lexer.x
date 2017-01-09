@@ -101,7 +101,6 @@ $idchar    = [$lower $upper $decdigit \']
 @positive_signed = \+
 
 @single_comment = "//"
-@multi_comment = "/*"
 
 ------------------------------------------------------------
 -- Alex "Identifier"
@@ -116,6 +115,10 @@ cute :-
 
 -- Ignore comments
   @single_comment .*                    ;
+
+-- Use multline comments
+  "/*"                                  { nestedComment }
+  "*/"                                  { lexError "Wrong end of comments" }
 
 -- Integers
 <0> {
