@@ -196,8 +196,8 @@ nestedComment sp _ _ =
           '/' ->
             do
               (c1, alexI2) <- liftMaybe errMsg $ alexGetChar alexI1
-              putAlexInput alexI2
               let str2 = c1:str1
+              putAlexInput alexI2
               case c1 of
                 '*' ->
                   go (n+1) str2 alexI2

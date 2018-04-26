@@ -47,7 +47,7 @@ instance Show StringBuffer where
 
 showByte :: StringBuffer -> Maybe Byte
 showByte sb =
-  if (bufferPosition sb < bufferLength sb)
+  if bufferPosition sb < bufferLength sb
   then Just $ BS.index (buffer sb) (bufferPosition sb)
   else Nothing
 {-# INLINE showByte #-}
