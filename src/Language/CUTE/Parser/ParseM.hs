@@ -4,10 +4,9 @@
 -- Copyright   : (c) CUTE Lang, 2016-
 -- License     : see LICENSE
 -- Maintainer  : Junyoung Clare Jang <jjc9310@gmail.com>
---             , Youngmin Cho <>
---             , Na Yeon Park <>
 -- Portability : Windows, POSIX
 --
+{-# LANGUAGE CPP #-}
 module Language.CUTE.Parser.ParseM
   (
     ParseState(..),
@@ -23,7 +22,9 @@ module Language.CUTE.Parser.ParseM
 where
 
 import Control.Monad
+#if MIN_VERSION_base(4,9,0)
 import Control.Monad.Fail
+#endif
 
 import Language.CUTE.Parser.SrcPos
 import Language.CUTE.Parser.StringBuffer
@@ -54,10 +55,14 @@ instance Applicative ParseM where
 
 instance Monad ParseM where
   (>>=) = thenParseM
+#if !MIN_VERSION_base(4,9,0)
   fail = failParseM
+#endif
 
+#if MIN_VERSION_base(4,9,0)
 instance MonadFail ParseM where
   fail = failParseM
+#endif
 
 returnParseM :: a -> ParseM a
 returnParseM a =
