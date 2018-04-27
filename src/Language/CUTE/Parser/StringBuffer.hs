@@ -1,14 +1,14 @@
 module Language.CUTE.Parser.StringBuffer
   (
-    Byte,
-    StringBuffer,
-    stringToStringBuffer,
-    skipBuffer,
-    getBufferByte,
-    getBufferString,
-    getBufferChar,
-    getBufferLength,
-    getBufferPosition,
+    Byte
+  , StringBuffer
+  , stringToStringBuffer
+  , skipBuf
+  , getBufByte
+  , getBufStr
+  , getBufChar
+  , getBufLen
+  , getBufPos
   )
 where
 
@@ -25,10 +25,11 @@ type Byte = Word8
 type Length = Int
 
 data StringBuffer
-  = StringBuffer
-    { buffer :: !BS.ByteString,
-      bufferLength :: !Length,
-      bufferPosition :: !Length }
+  = StringBuffer {
+      bufByteStr :: !BS.ByteString
+    , bufLen :: !Length
+    , bufPos :: !Length
+    }
 
 stringToStringBuffer :: String -> StringBuffer
 stringToStringBuffer str = StringBuffer bs (BS.length bs) 0
@@ -37,51 +38,49 @@ stringToStringBuffer str = StringBuffer bs (BS.length bs) 0
 {-# INLINE stringToStringBuffer #-}
 
 instance Show StringBuffer where
-  showsPrec _ sb = showString "<StringBuffer: ("
-                   . shows (bufferLength sb)
-                   . showString ","
-                   . shows (bufferPosition sb)
-                   . showString ")="
-                   . shows (showByte sb)
-                   . showString " >"
+  showsPrec _ buf =
+    showString "<StringBuffer: ("
+      . shows (bufLen buf)
+      . showString ","
+      . shows (bufPos buf)
+      . showString ")="
+      . shows (showByte buf)
+      . showString " >"
 
 showByte :: StringBuffer -> Maybe Byte
-showByte sb =
-  if bufferPosition sb < bufferLength sb
-  then Just $ BS.index (buffer sb) (bufferPosition sb)
+showByte buf =
+  if bufPos buf < bufLen buf
+  then Just $ BS.index (bufByteStr buf) (bufPos buf)
   else Nothing
 {-# INLINE showByte #-}
 
-skipBuffer :: Length -> StringBuffer -> StringBuffer
-skipBuffer n sb@(StringBuffer _ _ bp) = sb {bufferPosition = bp + n}
-{-# INLINE skipBuffer #-}
+skipBuf :: Length -> StringBuffer -> StringBuffer
+skipBuf n buf@(StringBuffer _ _ bp) = buf {bufPos = bp + n}
+{-# INLINE skipBuf #-}
 
-getBufferByte :: StringBuffer -> Maybe (Byte, StringBuffer)
-getBufferByte sb0 =
+getBufByte :: StringBuffer -> Maybe (Byte, StringBuffer)
+getBufByte buf =
   do
-    b <- showByte sb0
-    let sb1 = skipBuffer 1 sb0
-    return (b, sb1)
-{-# INLINE getBufferByte #-}
+    b <- showByte buf
+    return (b, skipBuf 1 buf)
+{-# INLINE getBufByte #-}
 
-getBufferString :: Length -> StringBuffer -> String
-getBufferString l sb = toString . BSU.take l
-                 . BS.drop (bufferPosition sb) $ buffer sb
-{-# INLINE getBufferString #-}
+getBufStr :: Length -> StringBuffer -> String
+getBufStr len buf =
+  toString . BSU.take len . BS.drop (bufPos buf) $ bufByteStr buf
+{-# INLINE getBufStr #-}
 
-getBufferChar :: StringBuffer -> Maybe (Char, StringBuffer)
-getBufferChar sb0 =
+getBufChar :: StringBuffer -> Maybe (Char, StringBuffer)
+getBufChar buf =
   do
-    (c,l) <- BSU.decode
-             . BS.drop (bufferPosition sb0) $ buffer sb0
-    let sb1 = skipBuffer l sb0
-    return (c, sb1)
-{-# INLINE getBufferChar #-}
+    (c,l) <- BSU.decode . BS.drop (bufPos buf) $ bufByteStr buf
+    return (c, skipBuf l buf)
+{-# INLINE getBufChar #-}
 
-getBufferLength :: StringBuffer -> Length
-getBufferLength = bufferLength
-{-# INLINE getBufferLength #-}
+getBufLen :: StringBuffer -> Length
+getBufLen = bufLen
+{-# INLINE getBufLen #-}
 
-getBufferPosition :: StringBuffer -> Length
-getBufferPosition = bufferPosition
-{-# INLINE getBufferPosition #-}
+getBufPos :: StringBuffer -> Length
+getBufPos = bufPos
+{-# INLINE getBufPos #-}

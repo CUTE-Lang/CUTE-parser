@@ -169,25 +169,30 @@ cute :-
 
 {
 test :: String -> [Token]
-test str = tokenize ps
+test str = tokenize ps0
   where
     tokenize :: ParseState -> [Token]
-    tokenize (ParseState sb0 pp0 cp0) =
-      case alexScan (AlexInput cp0 sb0) 0 of
+    tokenize (ParseState buf0 _ cpos0) =
+      case alexScan aInp0 0 of
         AlexEOF -> []
-        AlexError ai1 -> error (show ai1)
-        AlexSkip (AlexInput cp1 sb1) l ->
-          tokenize (ParseState sb1 cp0 cp1)
-        AlexToken (AlexInput cp1 sb1) l action ->
-          let pm = action cp1 sb0 l
+        AlexError aInp1 -> error . show $ aInp1
+        AlexSkip (AlexInput cpos1 buf1) _ ->
+          tokenize (ParseState buf1 cpos0 cpos1)
+        AlexToken (AlexInput cpos1 buf1) len action ->
+          let
+            pm = action cpos1 buf0 len
+            ps1 = ParseState buf1 cpos0 cpos1
           in
-            case runParseM pm (ParseState sb1 cp0 cp1) of
+            case runParseM pm ps1 of
               ParseOk ps2 (Posed _ token) ->
                 token : tokenize ps2
-              ParseErr esp eep emsg ->
-                error ("from " ++ show esp ++ " to " ++ show eep ++
+              ParseErr eSrtPos eEndPos emsg ->
+                error ("from " ++ show eSrtPos ++
+                       " to " ++ show eEndPos ++
                        ": " ++ emsg)
-    ps = ParseState sb sp sp
-    sb = stringToStringBuffer str
-    sp = SrcPos "test" 0
+      where
+        aInp0 = AlexInput cpos0 buf0
+    ps0 = ParseState buf pos pos
+    buf = stringToStringBuffer str
+    pos = SrcPos "test" 0
 }

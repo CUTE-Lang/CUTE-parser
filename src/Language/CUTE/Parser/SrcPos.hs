@@ -11,7 +11,7 @@
 module Language.CUTE.Parser.SrcPos
   (
     SrcPos(..),
-    increaseSrcPos,
+    incSrcPos,
     Posed(..)
   )
 where
@@ -25,10 +25,8 @@ data SrcPos
       spOffset :: !Int }
     deriving (Eq,Show)
 
-increaseSrcPos :: Int -> SrcPos -> SrcPos
-increaseSrcPos n sp =
-  case sp of
-    SrcPos f o -> SrcPos f (o + n)
+incSrcPos :: Int -> SrcPos -> SrcPos
+incSrcPos n (SrcPos f o) = SrcPos f (o + n)
 
 data Posed a
   = Posed SrcPos a

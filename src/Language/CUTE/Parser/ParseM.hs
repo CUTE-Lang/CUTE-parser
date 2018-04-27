@@ -28,10 +28,9 @@ import Control.Monad.Fail
 import Language.CUTE.Parser.SrcPos
 import Language.CUTE.Parser.StringBuffer
 
-
 data ParseState
   = ParseState
-    { stringBuffer :: StringBuffer,
+    { strBuf :: StringBuffer,
       prevPos :: SrcPos,
       currPos :: SrcPos }
 
@@ -42,7 +41,7 @@ data ParseResult s a
       errEndPos :: SrcPos,
       errMsg :: String }
 
-data ParseM a
+newtype ParseM a
   = ParseM
     { runParseM :: ParseState -> ParseResult ParseState a }
 
@@ -65,27 +64,27 @@ returnParseM a =
   a `seq` ParseM $ \s -> ParseOk s a
 
 thenParseM :: ParseM a -> (a -> ParseM b) -> ParseM b
-thenParseM p0 p1 =
+thenParseM p fp =
   ParseM $ \s0 ->
-            case runParseM p0 s0 of
+            case runParseM p s0 of
               ParseOk s1 x ->
-                runParseM (p1 x) s1
-              ParseErr sp0 sp1 msg ->
-                ParseErr sp0 sp1 msg
+                runParseM (fp x) s1
+              ParseErr pos0 pos1 msg ->
+                ParseErr pos0 pos1 msg
 
 failParseM :: String -> ParseM a
 failParseM msg =
   ParseM $ \s -> ParseErr (prevPos s) (currPos s) msg
 
 failPosParseM :: SrcPos -> SrcPos -> String -> ParseM a
-failPosParseM loc0 loc1 msg =
-  ParseM $ \s -> ParseErr loc0 loc1 msg
+failPosParseM pos0 pos1 msg =
+  ParseM $ \_ -> ParseErr pos0 pos1 msg
 
 getParseState :: ParseM ParseState
 getParseState = ParseM $ \s -> ParseOk s s
 
 putParseState :: ParseState -> ParseM ()
-putParseState s1 = ParseM $ \s0 -> ParseOk s1 ()
+putParseState s = ParseM $ \_ -> ParseOk s ()
 
 liftMaybe :: String -> Maybe a -> ParseM a
 liftMaybe _ (Just a) = returnParseM a
